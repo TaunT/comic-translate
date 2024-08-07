@@ -328,7 +328,7 @@ class ComicTranslateUI(QtWidgets.QMainWindow):
         self.s_combo.setToolTip(self.tr("Source Language"))
         s_combo_text_layout.addWidget(self.s_combo)
         self.s_text_edit = MTextEdit()
-        self.s_text_edit.setFixedHeight(150)
+        self.s_text_edit.setFixedHeight(200)
         s_combo_text_layout.addWidget(self.s_text_edit)
         input_layout.addLayout(s_combo_text_layout)
 
@@ -339,7 +339,7 @@ class ComicTranslateUI(QtWidgets.QMainWindow):
         self.t_combo.setToolTip(self.tr("Target Language"))
         t_combo_text_layout.addWidget(self.t_combo)
         self.t_text_edit = MTextEdit()
-        self.t_text_edit.setFixedHeight(150)
+        self.t_text_edit.setFixedHeight(200)
         t_combo_text_layout.addWidget(self.t_text_edit)
 
         input_layout.addLayout(t_combo_text_layout)
@@ -357,7 +357,7 @@ class ComicTranslateUI(QtWidgets.QMainWindow):
 
         self.font_size_dropdown = MComboBox().small()
         self.font_size_dropdown.setToolTip(self.tr("Font Size"))
-        self.font_size_dropdown.addItems(['4', '8', '9', '10', '11', '12', '14', '16', '18', 
+        self.font_size_dropdown.addItems(['4', '8', '9', '10', '11', '12', '14', '16', '18',
                                           '20', '22', '24', '28', '32', '36', '48', '72'])
         self.font_size_dropdown.setCurrentText('12')
         self.font_size_dropdown.setFixedWidth(60)
@@ -379,7 +379,7 @@ class ComicTranslateUI(QtWidgets.QMainWindow):
         dflt_clr = settings.value('color', '#000000')
         dflt_outline_check = settings.value('outline', True, type=bool)
         settings.endGroup()
-        
+
         self.block_font_color_button = QtWidgets.QPushButton()
         self.block_font_color_button.setToolTip(self.tr("Font Color"))
         self.block_font_color_button.setFixedSize(30, 30)
@@ -414,10 +414,10 @@ class ComicTranslateUI(QtWidgets.QMainWindow):
 
         # Outline Settings Layout
         outline_settings_layout = QtWidgets.QHBoxLayout()
-        
+
         self.outline_checkbox = MCheckBox(self.tr("Outline"))
         self.outline_checkbox.setChecked(dflt_outline_check)
-        
+
         self.outline_font_color_button = QtWidgets.QPushButton()
         self.outline_font_color_button.setToolTip(self.tr("Outline Color"))
         self.outline_font_color_button.setFixedSize(30, 30)
@@ -443,6 +443,28 @@ class ComicTranslateUI(QtWidgets.QMainWindow):
         text_render_layout.addLayout(main_text_settings_layout)
         text_render_layout.addLayout(outline_settings_layout)
         text_render_layout.addWidget(rendering_divider_bottom)
+
+        self.load_blocks_state_button = MClickBrowserFileToolButton(multiple=False)
+        self.load_blocks_state_button.set_dayu_svg("folder_fill.svg")
+        self.load_blocks_state_button.set_dayu_filters([".txt"])
+        self.load_blocks_state_button.setToolTip(self.tr("Import text file with translations"))
+        self.load_blocks_state_button.sig_file_changed.connect(self.load_blocks_state)
+
+        blocks_layout = QtWidgets.QHBoxLayout()
+        self.blocks_checker_group = MToolButtonGroup(orientation=QtCore.Qt.Horizontal, exclusive=False)
+        blocks_checker_buttons = [
+            {"text": self.tr("Previous"), "svg": "left_fill.svg", "checkable": False, "tooltip": self.tr("Previous block"), "clicked": self.select_prev_text},
+            {"text": self.tr("Next"), "svg": "right_fill.svg", "checkable": False, "tooltip": self.tr("Next block"), "clicked": self.select_next_text},
+            {"text": self.tr("Save state"), "svg": "save_fill.svg", "checkable": False, "tooltip": self.tr("Backup all blocks to file"), "clicked": self.save_blocks_state},
+            {"text": self.tr("Load saved"), "svg": "folder_fill.svg", "checkable": False, "tooltip": self.tr("Import blocks from file"), "clicked": self.load_blocks_button},
+        ]
+        self.blocks_checker_group.set_button_list(blocks_checker_buttons)
+        blocks_layout.addWidget(self.blocks_checker_group)
+        blocks_panel_layout = QtWidgets.QVBoxLayout()
+        blocks_panel_header = MDivider(self.tr('Actions with text blocks'))
+        blocks_panel_layout.addWidget(blocks_panel_header)
+        blocks_panel_layout.addLayout(blocks_layout)
+        blocks_panel_layout.addSpacing(20)
 
         # Tools Layout
         tools_widget = QtWidgets.QWidget() 
@@ -591,6 +613,7 @@ class ComicTranslateUI(QtWidgets.QMainWindow):
 
         right_layout.addLayout(input_layout)
         right_layout.addLayout(text_render_layout)
+        right_layout.addLayout(blocks_panel_layout)
         right_layout.addWidget(tools_scroll)
         right_layout.addStretch()
 
@@ -744,10 +767,10 @@ class ComicTranslateUI(QtWidgets.QMainWindow):
                 font_families = QFontDatabase.applicationFontFamilies(font_id)
                 if font_families:
                     return font_families[0]
-        
+
         # If not a file path or loading failed, treat as font family name
         return font_input
-    
+
     def get_color(self):
         default_color = QtGui.QColor('#000000')
         color_dialog = QtWidgets.QColorDialog()
@@ -755,5 +778,5 @@ class ComicTranslateUI(QtWidgets.QMainWindow):
         if color_dialog.exec() == QtWidgets.QDialog.Accepted:
             color = color_dialog.selectedColor()
             return color
-        
+
 
