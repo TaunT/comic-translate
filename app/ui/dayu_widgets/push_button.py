@@ -98,6 +98,11 @@ class MPushButton(QtWidgets.QPushButton):
         self.set_dayu_type(MPushButton.PrimaryType)
         return self
 
+    def default(self):
+        """Set MPushButton to DefaultType"""
+        self.set_dayu_type(MPushButton.DefaultType)
+        return self
+
     def success(self):
         """Set MPushButton to SuccessType"""
         self.set_dayu_type(MPushButton.SuccessType)
@@ -136,4 +141,9 @@ class MPushButton(QtWidgets.QPushButton):
     def tiny(self):
         """Set MPushButton to tiny size"""
         self.set_dayu_size(dayu_theme.tiny)
+        return self
+
+    def default(self):
+        """Set MPushButton to DefaultType"""
+        self.set_dayu_type(MPushButton.DefaultType)
         return self
