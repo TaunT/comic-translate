@@ -225,6 +225,27 @@ class ComicTranslate(ComicTranslateUI):
     def menu_highlight(self, button_index: int):
         self.hbutton_group.get_button_group().buttons()[button_index].success()
 
+    def set_block_font_settings(self):
+        self.min_font_spinbox.setValue(self.settings_page.get_min_font_size())
+        self.max_font_spinbox.setValue(self.settings_page.get_max_font_size())
+        text_rendering_settings = self.settings_page.get_text_rendering_settings()
+        self.block_font_color_button.setStyleSheet(
+            f"background-color: {text_rendering_settings['color']}; border: none; border-radius: 5px;"
+        )
+        self.block_font_color_button.setProperty('selected_color', settings.value('color', text_rendering_settings['color']))
+        if self.current_text_block:
+            index = self.get_current_block_index()
+            blk = self.blk_list[index]
+            if blk.font_color:
+                self.block_font_color_button.setStyleSheet(
+                    f"background-color: {blk.font_color}; border: none; border-radius: 5px;"
+                )
+                self.block_font_color_button.setProperty('selected_color', settings.value('color', blk.font_color))
+            if blk.min_font_size > 0:
+                self.min_font_spinbox.setValue(blk.min_font_size)
+            if blk.max_font_size > 0:
+                self.max_font_spinbox.setValue(blk.max_font_size)
+
     def batch_mode_selected(self):
         self.disable_hbutton_group()
         self.translate_button.setEnabled(True)
@@ -328,6 +349,7 @@ class ComicTranslate(ComicTranslateUI):
         self.current_text_block = None
         self.s_text_edit.clear()
         self.t_text_edit.clear()
+        self.set_block_font_settings()
 
     def finish_ocr_translate(self):
         if self.blk_list:
@@ -643,6 +665,7 @@ class ComicTranslate(ComicTranslateUI):
             self.s_text_edit.clear()
             self.t_text_edit.clear()
             self.current_text_block = None
+        self.set_block_font_settings()
 
     def update_text_block(self):
         if self.current_text_block:
