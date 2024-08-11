@@ -262,13 +262,12 @@ class ComicTranslateUI(QtWidgets.QMainWindow):
         self.s_combo.setToolTip(self.tr("Source Language"))
         s_combo_text_layout.addWidget(self.s_combo)
         self.s_text_edit = MTextEdit()
-        self.s_text_edit.setFixedHeight(300)
+        self.s_text_edit.setFixedHeight(200)
         s_combo_text_layout.addWidget(self.s_text_edit)
         input_layout.addLayout(s_combo_text_layout)
 
         # Target Language
         t_combo_text_layout = QtWidgets.QVBoxLayout()
-        t_combo_text_layout.setAlignment(QtCore.Qt.AlignTop)
         self.t_combo = MComboBox()
         self.t_combo.addItems([self.tr(lang) for lang in supported_target_languages])
         self.t_combo.setToolTip(self.tr("Target Language"))
@@ -278,10 +277,11 @@ class ComicTranslateUI(QtWidgets.QMainWindow):
         t_combo_text_layout.addWidget(self.t_text_edit)
 
         # Font Settings
+        self.font_settings_layout = QtWidgets.QHBoxLayout()
         min_font_layout = QtWidgets.QHBoxLayout()
         max_font_layout = QtWidgets.QHBoxLayout()
-        min_font_label = MLabel(self.tr("Minimum Font Size:"))
-        max_font_label = MLabel(self.tr("Maximum Font Size:"))
+        min_font_label = MLabel(self.tr("Min Size:"))
+        max_font_label = MLabel(self.tr("Max Size:"))
         self.min_font_spinbox = MSpinBox().small()
         self.min_font_spinbox.setFixedWidth(60)
         self.min_font_spinbox.setMaximum(100)
@@ -296,8 +296,8 @@ class ComicTranslateUI(QtWidgets.QMainWindow):
         max_font_layout.addWidget(max_font_label)
         max_font_layout.addWidget(self.max_font_spinbox)
         max_font_layout.addStretch()
-        t_combo_text_layout.addLayout(min_font_layout)
-        t_combo_text_layout.addLayout(max_font_layout)
+        self.font_settings_layout.addLayout(min_font_layout)
+        self.font_settings_layout.addLayout(max_font_layout)
         self.min_font_spinbox.textChanged.connect(self.update_text_block_font_min)
         self.max_font_spinbox.textChanged.connect(self.update_text_block_font_max)
 
@@ -312,9 +312,15 @@ class ComicTranslateUI(QtWidgets.QMainWindow):
         self.block_font_color_button.setProperty('selected_color', "#000000")
         color_layout.addWidget(color_label)
         color_layout.addWidget(self.block_font_color_button)
-        color_layout.addStretch()
-        t_combo_text_layout.addLayout(color_layout)
+        self.font_settings_layout.addLayout(color_layout)
         self.block_font_color_button.clicked.connect(self.select_color)
+
+        font_panel_layout = QtWidgets.QVBoxLayout()
+        font_panel_header = MDivider(self.tr('Custom font settings for the block'))
+        font_panel_layout.addSpacing(20)
+        font_panel_layout.addWidget(font_panel_header)
+        font_panel_layout.addLayout(self.font_settings_layout)
+        font_panel_layout.addSpacing(20)
 
         input_layout.addLayout(t_combo_text_layout)
 
@@ -471,6 +477,7 @@ class ComicTranslateUI(QtWidgets.QMainWindow):
 
         right_layout.addLayout(input_layout)
         right_layout.addLayout(blocks_layout)
+        right_layout.addLayout(font_panel_layout)
         right_layout.addWidget(tools_scroll)
         right_layout.addStretch()
 
@@ -499,6 +506,11 @@ class ComicTranslateUI(QtWidgets.QMainWindow):
         content_widget.setLayout(content_layout)
 
         return content_widget
+
+    def set_font_settings_enabled(self, enabled: bool):
+        self.min_font_spinbox.setEnabled(enabled)
+        self.max_font_spinbox.setEnabled(enabled)
+        self.block_font_color_button.setEnabled(enabled)
 
     def update_text_block_font_min(self):
         if self.current_text_block:
