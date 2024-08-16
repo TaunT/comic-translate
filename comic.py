@@ -506,8 +506,46 @@ class ComicTranslate(ComicTranslateUI):
         if self.blk_list:
             rect = self.find_corresponding_rect(self.blk_list[0], 0.5)
             self.image_viewer.select_rectangle(rect)
+            self.make_frequent_substitutions()
         self.set_tool('box')
         self.on_manual_finished()
+
+    def make_frequent_substitutions(self):
+        substitutions = {}
+        substitutions[",,,"] = "..."
+        substitutions[", _"] = "..."
+        substitutions[";.,"] = "..."
+        substitutions[";,-"] = "..."
+        substitutions[":."] = "..."
+        substitutions[":_"] = "..."
+        substitutions["._"] = "..."
+        substitutions[",,"] = "..."
+        substitutions["_."] = "..."
+        substitutions[", _"] = "..."
+        substitutions[":~"] = "..."
+        substitutions["::"] = "..."
+        substitutions["_"] = "..."
+        substitutions[";"] = "."
+        substitutions[" ,"] = ","
+        substitutions["--"] = "..."
+        substitutions["70"] = "TO"
+        substitutions["7o"] = "TO"
+        substitutions["10"] = "TO"
+        substitutions["/S "] = "IS "
+        substitutions["1T"] = "IT "
+        substitutions["S0 "] = "SO "
+        substitutions["(t "] = "IT"
+        substitutions["[ "] = "I "
+        substitutions["...?!"] = "?!.."
+        substitutions["...?"] = "?.."
+        substitutions["...!"] = "!.."
+
+        updated_blk_list = []
+        for blk in self.blk_list:
+            for fr, to in substitutions.items():
+                blk.text = blk.text.replace(fr, to)
+            updated_blk_list.append(blk)
+        self.blk_list = updated_blk_list
 
     def ocr(self):
         source_lang = self.s_combo.currentText()
