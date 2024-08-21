@@ -609,7 +609,7 @@ class ComicTranslateUI(QtWidgets.QMainWindow):
         tools_scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         tools_scroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         tools_scroll.setFocusPolicy(QtCore.Qt.FocusPolicy.NoFocus)
-        #tools_scroll.setMinimumHeight(300)
+        tools_scroll.setMinimumHeight(330)
 
         right_layout.addLayout(input_layout)
         right_layout.addLayout(text_render_layout)
