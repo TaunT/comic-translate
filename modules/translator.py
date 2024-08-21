@@ -47,7 +47,7 @@ class Translator:
 
     def get_llm_model(self, translator_key: str):
         model_map = {
-            "GPT-4o": "gpt-4o",
+            "GPT-4o": "gpt-4o-2024-08-06",
             "GPT-4o mini": "gpt-4o-mini",
             "Claude-3-Opus": "claude-3-opus-20240229",
             "Claude-3.5-Sonnet": "claude-3-5-sonnet-20240620",
