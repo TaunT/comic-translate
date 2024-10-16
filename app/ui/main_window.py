@@ -363,7 +363,8 @@ class ComicTranslateUI(QtWidgets.QMainWindow):
         self.font_size_dropdown.setFixedWidth(60)
         self.line_spacing_dropdown = MComboBox().small()
         self.line_spacing_dropdown.setToolTip(self.tr("Line Spacing"))
-        self.line_spacing_dropdown.addItems(['1.0', '1.1', '1.2', '1.3', '1.4', '1.5'])
+        self.line_spacing_dropdown.addItems(['0.5', '0.7', '1.0', '1.1', '1.2', '1.3', '1.4', '1.5'])
+        self.line_spacing_dropdown.set_value('1.1')
         self.line_spacing_dropdown.setFixedWidth(60)
 
         font_settings_layout.addWidget(self.font_dropdown)
@@ -429,7 +430,7 @@ class ComicTranslateUI(QtWidgets.QMainWindow):
         self.outline_width_dropdown = MComboBox().small()
         self.outline_width_dropdown.setFixedWidth(60)
         self.outline_width_dropdown.setToolTip(self.tr("Outline Width"))
-        self.outline_width_dropdown.addItems(['1.0', '1.15', '1.3', '1.4', '1.5'])
+        self.outline_width_dropdown.addItems(['1.0', '1.15', '1.3', '1.4', '1.5', '2.0', '3.0'])
 
         outline_settings_layout.addWidget(self.outline_checkbox)
         outline_settings_layout.addWidget(self.outline_font_color_button)
@@ -565,14 +566,14 @@ class ComicTranslateUI(QtWidgets.QMainWindow):
         self.eraser_size_slider = MSlider()
 
         self.brush_size_slider.setMinimum(1)
-        self.brush_size_slider.setMaximum(50)
-        self.brush_size_slider.setValue(10)
+        self.brush_size_slider.setMaximum(10)
+        self.brush_size_slider.setValue(3)
         self.brush_size_slider.valueChanged.connect(self.set_brush_size)
 
         self.eraser_size_slider.setMinimum(1)
-        self.eraser_size_slider.setMaximum(50)
-        self.eraser_size_slider.setValue(20)
+        self.eraser_size_slider.setMaximum(10)
         self.eraser_size_slider.valueChanged.connect(self.set_eraser_size)
+        self.eraser_size_slider.setValue(2)
         b_slider_label = MLabel(self.tr("Brush Size Slider"))
         e_slider_label = MLabel(self.tr("Eraser Size Slider"))
 

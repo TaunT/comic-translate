@@ -351,9 +351,9 @@ class ComicTranslate(ComicTranslateUI):
                init_font_size = default_init_font_size
 
             blk_to_save = {
+                'translation': blk.translation,
                 'text': blk.text,
                 'rect': blk_rect_export,
-                'translation': blk.translation,
                 'min_font_size': min_font_size,
                 'init_font_size': init_font_size,
             }
