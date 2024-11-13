@@ -332,7 +332,7 @@ class ComicTranslate(ComicTranslateUI):
         date_time = datetime.now().strftime("_%Y-%m-%d_%H-%M-%S")
         file_name_original = self.image_files[self.current_image_index]
         file_name = file_name_original[0:-4] + date_time + ".txt"
-        a = open(file_name, 'w')
+        a = open(file_name, 'w', encoding="utf-8")
 
         default_min_font_size = self.settings_page.get_min_font_size()
         default_init_font_size = self.settings_page.get_max_font_size()
@@ -382,7 +382,7 @@ class ComicTranslate(ComicTranslateUI):
 
     def load_blocks_state(self, file_path: str):
         updated_blk_list = []
-        with open(file_path, 'r') as f:
+        with open(file_path, 'r', encoding="utf-8") as f:
             for line in f.readlines():
                 blk_to_load = json.loads(line)
                 blk_rect_coord = blk_to_load['rect'].split(',')
