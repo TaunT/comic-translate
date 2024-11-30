@@ -63,6 +63,7 @@ def set_texts_from_json(blk_list: List[TextBlock], json_string: str):
                 print(f"Warning: {block_key} not found in JSON string.")
     else:
         print("No JSON found in the input string.")
+        print(json_string)
 
 def format_translations(blk_list: List[TextBlock], trg_lng_cd: str, upper_case: bool =True):
     for blk in blk_list:
