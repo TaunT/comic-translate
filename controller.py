@@ -3,6 +3,10 @@ import cv2, shutil
 import tempfile
 import numpy as np
 import copy
+
+import json
+from datetime import datetime
+
 from typing import Callable, Tuple, List
 
 from PySide6 import QtWidgets
@@ -57,6 +61,7 @@ class ComicTranslate(ComicTranslateUI):
         self.image_states = {}
 
         self.blk_list = []
+        self.cleaned_image = None # Store cleaned image
         self.image_data = {}  # Store the latest version of each image
         self.image_history = {}  # Store file path history for all images
         self.in_memory_history = {}  # Store cv2 image history for recent images
@@ -306,15 +311,119 @@ class ComicTranslate(ComicTranslateUI):
         self.blk_list = updated_blk_list
         self.pipeline.load_box_coords(self.blk_list)
 
+    def get_current_block_index(self):
+        if self.curr_tblock:
+            return self.blk_list.index(self.curr_tblock)
+        return 0
+
+    def select_prev_text(self):
+        if len(self.blk_list) == 0:
+            return
+        current_block_index = self.get_current_block_index()
+        if current_block_index == 0:
+            block_index = -1
+        else:
+            block_index = current_block_index - 1
+        rect = self.find_corresponding_rect(self.blk_list[block_index], 0.5)
+        if rect == None:
+            return
+        self.image_viewer.select_rectangle(rect)
+
+    def select_next_text(self):
+        if len(self.blk_list) == 0:
+            return
+        current_block_index = self.get_current_block_index()
+        if current_block_index == len(self.blk_list) - 1:
+            block_index = 0
+        else:
+            block_index = current_block_index + 1
+        rect = self.find_corresponding_rect(self.blk_list[block_index], 0.5)
+        if rect == None:
+            return
+        self.image_viewer.select_rectangle(rect)
+
+    def save_blocks_state(self):
+        if len(self.blk_list) == 0:
+            return
+        date_time = datetime.now().strftime("_%Y-%m-%d_%H-%M-%S")
+        file_name_original = self.image_files[self.curr_img_idx]
+        file_name = file_name_original[0:-4] + date_time + ".txt"
+        a = open(file_name, 'w', encoding="utf-8")
+
+        default_min_font_size = self.settings_page.get_min_font_size()
+        default_init_font_size = self.settings_page.get_max_font_size()
+
+        for blk in self.blk_list:
+            blk_rect = tuple(blk.xyxy)
+            blk_rect_export = str(int(blk_rect[0])) + ',' + str(int(blk_rect[1]))  + ',' +  str(int(blk_rect[2]))  + ',' +  str(int(blk_rect[3]))
+
+            if blk.min_font_size > 0:
+               min_font_size = blk.min_font_size
+            else:
+               min_font_size = default_min_font_size
+            if blk.max_font_size > 0:
+               init_font_size = blk.max_font_size
+            else:
+               init_font_size = default_init_font_size
+
+            blk_to_save = {
+                'translation': blk.translation,
+                'text': blk.text,
+                'rect': blk_rect_export,
+                'min_font_size': min_font_size,
+                'init_font_size': init_font_size,
+            }
+            a.write(json.dumps(blk_to_save, ensure_ascii=False) + "\n")
+
+        a.close()
+        dialog_message = "File " + file_name + " with data saved\n"
+
+        if self.cleaned_image is not None:
+            cv2_img = self.cleaned_image #self.image_data[file_name_original]
+            cv2_img_save = cv2.cvtColor(cv2_img, cv2.COLOR_BGR2RGB)
+            sv_pth = file_name_original[0:-4] + date_time + '_cleaned' + file_name_original[-4:]
+            cv2.imwrite(sv_pth, cv2_img_save)
+            dialog_message += "File " + sv_pth + " with cleaned image saved\n"
+
+        dialog = QtWidgets.QDialog(self)
+        dialog.setWindowTitle("Export completed successfully")
+        label = QtWidgets.QLabel(dialog)
+        label.setText(dialog_message)
+        label.setMargin(20)
+        label.adjustSize()
+        dialog.exec_()
+
+    def load_blocks_button(self):
+        self.load_blocks_state_button.click()
+
+    def load_blocks_state(self, file_path: str):
+        updated_blk_list = []
+        with open(file_path, 'r', encoding="utf-8") as f:
+            for line in f.readlines():
+                blk_to_load = json.loads(line)
+                blk_rect_coord = blk_to_load['rect'].split(',')
+                new_blk_coord = [int(blk_rect_coord[0]), int(blk_rect_coord[1]), int(blk_rect_coord[2]), int(blk_rect_coord[3])]
+                new_blk = TextBlock(new_blk_coord)
+                new_blk.translation = blk_to_load['translation']
+                new_blk.text = blk_to_load['text']
+                new_blk.min_font_size = blk_to_load['min_font_size']
+                new_blk.init_font_size = blk_to_load['init_font_size']
+                updated_blk_list.append(new_blk)
+
+        self.blk_list = updated_blk_list
+        self.pipeline.load_box_coords(self.blk_list)
+
     def batch_mode_selected(self):
         self.disable_hbutton_group()
         self.translate_button.setEnabled(True)
         self.cancel_button.setEnabled(True)
+        self.blocks_checker_group.setVisible(False)
 
     def manual_mode_selected(self):
         self.enable_hbutton_group()
         self.translate_button.setEnabled(False)
         self.cancel_button.setEnabled(False)
+        self.blocks_checker_group.setVisible(True)
     
     def on_image_processed(self, index: int, image: np.ndarray, image_path: str):
         if index == self.curr_img_idx:
@@ -323,6 +432,7 @@ class ComicTranslate(ComicTranslateUI):
             command = SetImageCommand(self, image_path, image, False)
             self.undo_group.activeStack().push(command)
             self.image_data[image_path] = image
+        self.menu_highlight(0)
 
     def on_image_skipped(self, image_path: str, skip_reason: str, error: str):
         message = { 
@@ -413,8 +523,46 @@ class ComicTranslate(ComicTranslateUI):
         if self.blk_list:
             rect = self.find_corresponding_rect(self.blk_list[0], 0.5)
             self.image_viewer.select_rectangle(rect)
+            self.make_frequent_substitutions()
         self.set_tool('box')
         self.on_manual_finished()
+
+    def make_frequent_substitutions(self):
+        substitutions = {}
+        substitutions["...?!"] = "?!.."
+        substitutions["...?"] = "?.."
+        substitutions["...!"] = "!.."
+        substitutions[",,,"] = "..."
+        substitutions[", _"] = "..."
+        substitutions[";.,"] = "..."
+        substitutions[";,-"] = "..."
+        substitutions[":."] = "..."
+        substitutions[":_"] = "..."
+        substitutions["._"] = "..."
+        substitutions[",,"] = "..."
+        substitutions["_."] = "..."
+        substitutions[", _"] = "..."
+        substitutions[":~"] = "..."
+        substitutions["::"] = "..."
+        substitutions["_"] = "..."
+        substitutions[";"] = "."
+        substitutions[" ,"] = ","
+        substitutions["--"] = "..."
+        substitutions["70"] = "TO"
+        substitutions["7o"] = "TO"
+        substitutions["10"] = "TO"
+        substitutions["/S "] = "IS "
+        substitutions["1T"] = "IT "
+        substitutions["S0 "] = "SO "
+        substitutions["(t "] = "IT"
+        substitutions["[ "] = "I "
+
+        updated_blk_list = []
+        for blk in self.blk_list:
+            for fr, to in substitutions.items():
+                blk.text = blk.text.replace(fr, to)
+            updated_blk_list.append(blk)
+        self.blk_list = updated_blk_list
 
     def ocr(self):
         source_lang = self.s_combo.currentText()
@@ -423,6 +571,7 @@ class ComicTranslate(ComicTranslateUI):
         self.loading.setVisible(True)
         self.disable_hbutton_group()
         self.run_threaded(self.pipeline.OCR_image, None, self.default_error_handler, self.finish_ocr_translate)
+        self.menu_highlight(1)
 
     def translate_image(self):
         source_lang = self.s_combo.currentText()
@@ -432,6 +581,7 @@ class ComicTranslate(ComicTranslateUI):
         self.loading.setVisible(True)
         self.disable_hbutton_group()
         self.run_threaded(self.pipeline.translate_image, None, self.default_error_handler, self.finish_ocr_translate)
+        self.menu_highlight(2)
 
     def inpaint_and_set(self):
         if self.image_viewer.hasPhoto() and self.image_viewer.has_drawn_elements():
@@ -440,6 +590,7 @@ class ComicTranslate(ComicTranslateUI):
             self.disable_hbutton_group()
             self.run_threaded(self.pipeline.inpaint, self.pipeline.inpaint_complete, 
                               self.default_error_handler, self.on_manual_finished)
+            self.menu_highlight(4)
 
     def load_initial_image(self, file_paths: List[str]):
         file_paths = self.file_handler.prepare_files(file_paths)
@@ -551,6 +702,12 @@ class ComicTranslate(ComicTranslateUI):
 
         self.image_viewer.resetTransform()
         self.image_viewer.fitInView()
+
+        for button in self.hbutton_group.get_button_group().buttons():
+            button.default()
+
+    def menu_highlight(self, button_index: int):
+        self.hbutton_group.get_button_group().buttons()[button_index].success()
 
     def update_image_cards(self):
         # Clear existing items
@@ -670,6 +827,7 @@ class ComicTranslate(ComicTranslateUI):
             'source_lang': self.s_combo.currentText(),
             'target_lang': self.t_combo.currentText(),
             'brush_strokes': self.image_viewer.save_brush_strokes(),
+            'cleaned_image': self.cleaned_image,
             'blk_list': self.blk_list.copy()  # Store a copy of the list, not a reference
         }
 
@@ -690,6 +848,7 @@ class ComicTranslate(ComicTranslateUI):
             self.s_combo.setCurrentText(state['source_lang'])
             self.t_combo.setCurrentText(state['target_lang'])
             self.image_viewer.load_brush_strokes(state['brush_strokes'])
+            self.cleaned_image = state['cleaned_image']
 
             for text_item in self.image_viewer.text_items:
                 text_item.item_selected.connect(self.on_text_item_selected)
@@ -755,7 +914,7 @@ class ComicTranslate(ComicTranslateUI):
                 
                 self.enable_hbutton_group()
                 self.undo_group.activeStack().endMacro()
-
+                self.menu_highlight(3)
             else:
                 self.loading.setVisible(True)
                 self.disable_hbutton_group()
@@ -903,6 +1062,7 @@ class ComicTranslate(ComicTranslateUI):
             self.run_threaded(manual_wrap, self.on_render_complete, self.default_error_handler, 
                               None, self, new_blocks, font_family, line_spacing, outline_width, 
                               bold, italic, underline, max_font_size, min_font_size)
+            self.menu_highlight(5)
 
     def handle_rectangle_change(self, new_rect: QRectF, angle: float, tr_origin: Tuple):
         # Find the corresponding TextBlock in blk_list

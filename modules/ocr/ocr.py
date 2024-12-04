@@ -39,7 +39,7 @@ class OCRProcessor:
         self.google_ocr = True if self.ocr_model == self.settings.ui.tr("Google Cloud Vision") else False
         self.device = 'cuda' if self.settings.is_gpu_enabled() else 'cpu'
 
-        if self.source_lang_english in ["French", "German", "Dutch", "Russian", "Spanish", "Italian"] and self.ocr_model == self.settings.ui.tr("Default"):
+        if self.source_lang_english in ["English", "French", "German", "Dutch", "Russian", "Spanish", "Italian"] and self.ocr_model == self.settings.ui.tr("Default"):
             self.gpt_ocr = True
         else:
             self.gpt_ocr = False

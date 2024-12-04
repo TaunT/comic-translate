@@ -332,7 +332,7 @@ class ComicTranslateUI(QtWidgets.QMainWindow):
         self.s_combo.setToolTip(self.tr("Source Language"))
         s_combo_text_layout.addWidget(self.s_combo)
         self.s_text_edit = MTextEdit()
-        self.s_text_edit.setFixedHeight(150)
+        self.s_text_edit.setFixedHeight(200)
         s_combo_text_layout.addWidget(self.s_text_edit)
         input_layout.addLayout(s_combo_text_layout)
 
@@ -343,7 +343,7 @@ class ComicTranslateUI(QtWidgets.QMainWindow):
         self.t_combo.setToolTip(self.tr("Target Language"))
         t_combo_text_layout.addWidget(self.t_combo)
         self.t_text_edit = MTextEdit()
-        self.t_text_edit.setFixedHeight(150)
+        self.t_text_edit.setFixedHeight(200)
         t_combo_text_layout.addWidget(self.t_text_edit)
 
         input_layout.addLayout(t_combo_text_layout)
@@ -361,13 +361,14 @@ class ComicTranslateUI(QtWidgets.QMainWindow):
 
         self.font_size_dropdown = MComboBox().small()
         self.font_size_dropdown.setToolTip(self.tr("Font Size"))
-        self.font_size_dropdown.addItems(['4', '8', '9', '10', '11', '12', '14', '16', '18', 
+        self.font_size_dropdown.addItems(['4', '8', '9', '10', '11', '12', '14', '16', '18',
                                           '20', '22', '24', '28', '32', '36', '48', '72'])
         self.font_size_dropdown.setCurrentText('12')
         self.font_size_dropdown.setFixedWidth(60)
         self.line_spacing_dropdown = MComboBox().small()
         self.line_spacing_dropdown.setToolTip(self.tr("Line Spacing"))
-        self.line_spacing_dropdown.addItems(['1.0', '1.1', '1.2', '1.3', '1.4', '1.5'])
+        self.line_spacing_dropdown.addItems(['0.5', '0.7', '1.0', '1.1', '1.2', '1.3', '1.4', '1.5'])
+        self.line_spacing_dropdown.set_value('1.1')
         self.line_spacing_dropdown.setFixedWidth(60)
 
         font_settings_layout.addWidget(self.font_dropdown)
@@ -433,7 +434,7 @@ class ComicTranslateUI(QtWidgets.QMainWindow):
         self.outline_width_dropdown = MComboBox().small()
         self.outline_width_dropdown.setFixedWidth(60)
         self.outline_width_dropdown.setToolTip(self.tr("Outline Width"))
-        self.outline_width_dropdown.addItems(['1.0', '1.15', '1.3', '1.4', '1.5'])
+        self.outline_width_dropdown.addItems(['1.0', '1.15', '1.3', '1.4', '1.5', '2.0', '3.0'])
 
         outline_settings_layout.addWidget(self.outline_checkbox)
         outline_settings_layout.addWidget(self.outline_font_color_button)
@@ -447,6 +448,28 @@ class ComicTranslateUI(QtWidgets.QMainWindow):
         text_render_layout.addLayout(main_text_settings_layout)
         text_render_layout.addLayout(outline_settings_layout)
         text_render_layout.addWidget(rendering_divider_bottom)
+
+        self.load_blocks_state_button = MClickBrowserFileToolButton(multiple=False)
+        self.load_blocks_state_button.set_dayu_svg("folder_fill.svg")
+        self.load_blocks_state_button.set_dayu_filters([".txt"])
+        self.load_blocks_state_button.setToolTip(self.tr("Import text file with translations"))
+        self.load_blocks_state_button.sig_file_changed.connect(self.load_blocks_state)
+
+        blocks_layout = QtWidgets.QHBoxLayout()
+        self.blocks_checker_group = MToolButtonGroup(orientation=QtCore.Qt.Horizontal, exclusive=False)
+        blocks_checker_buttons = [
+            {"text": self.tr("Previous"), "svg": "left_fill.svg", "checkable": False, "tooltip": self.tr("Previous block"), "clicked": self.select_prev_text},
+            {"text": self.tr("Next"), "svg": "right_fill.svg", "checkable": False, "tooltip": self.tr("Next block"), "clicked": self.select_next_text},
+            {"text": self.tr("Save state"), "svg": "save_fill.svg", "checkable": False, "tooltip": self.tr("Backup all blocks to file"), "clicked": self.save_blocks_state},
+            {"text": self.tr("Load saved"), "svg": "folder_fill.svg", "checkable": False, "tooltip": self.tr("Import blocks from file"), "clicked": self.load_blocks_button},
+        ]
+        self.blocks_checker_group.set_button_list(blocks_checker_buttons)
+        blocks_layout.addWidget(self.blocks_checker_group)
+        blocks_panel_layout = QtWidgets.QVBoxLayout()
+        blocks_panel_header = MDivider(self.tr('Actions with text blocks'))
+        blocks_panel_layout.addWidget(blocks_panel_header)
+        blocks_panel_layout.addLayout(blocks_layout)
+        blocks_panel_layout.addSpacing(20)
 
         # Tools Layout
         tools_widget = QtWidgets.QWidget() 
@@ -539,7 +562,7 @@ class ComicTranslateUI(QtWidgets.QMainWindow):
 
         self.brush_eraser_slider.setMinimum(1)
         self.brush_eraser_slider.setMaximum(50)
-        self.brush_eraser_slider.setValue(10)
+        self.brush_eraser_slider.setValue(3)
         self.brush_eraser_slider.setToolTip(self.tr("Brush/Eraser Size Slider"))
         self.brush_eraser_slider.valueChanged.connect(self.set_brush_eraser_size)
 
@@ -560,10 +583,11 @@ class ComicTranslateUI(QtWidgets.QMainWindow):
         tools_scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         tools_scroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         tools_scroll.setFocusPolicy(QtCore.Qt.FocusPolicy.NoFocus)
-        #tools_scroll.setMinimumHeight(300)
+        tools_scroll.setMinimumHeight(330)
 
         right_layout.addLayout(input_layout)
         right_layout.addLayout(text_render_layout)
+        right_layout.addLayout(blocks_panel_layout)
         right_layout.addWidget(tools_scroll)
         right_layout.addStretch()
 

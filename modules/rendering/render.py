@@ -113,7 +113,7 @@ def draw_text(image: np.ndarray, blk_list: List[TextBlock], font_pth: str, colou
             offsets = [(dx, dy) for dx in (-2, -1, 0, 1, 2) for dy in (-2, -1, 0, 1, 2) if dx != 0 or dy != 0]
             for dx, dy in offsets:
                 draw.multiline_text((tbbox_top_left[0] + dx, tbbox_top_left[1] + dy), translation, font=font, fill="#FFF", align=blk.alignment, spacing=1)
-        draw.multiline_text(tbbox_top_left, translation, colour, font, align=blk.alignment, spacing=1)
+        draw.multiline_text(tbbox_top_left, translation, colour, font, align=blk.alignment, spacing=2)
         
     image = pil_to_cv2(image)
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)

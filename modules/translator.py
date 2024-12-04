@@ -193,6 +193,8 @@ class Translator:
                 image = cv2_to_pil(image)
                 entire_translated_text = self.get_gemini_translation(user_prompt, model, system_prompt, image)
 
+            print(entire_translated_text)
+
             set_texts_from_json(blk_list, entire_translated_text)
 
         return blk_list

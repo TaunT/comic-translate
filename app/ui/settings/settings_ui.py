@@ -45,7 +45,7 @@ class SettingsPageUI(QtWidgets.QWidget):
                                     self.tr("Microsoft Translator")]
         
         self.languages = ['English', '한국어', 'Français', '日本語', 
-         '简体中文', '繁體中文', 'русский', 'Deutsch', 
+         '简体中文', '繁體中文', 'Русский', 'Deutsch',
          'Nederlands', 'Español', 'Italiano', 'Türkçe']
         
         self.nav_cards = []  
@@ -59,7 +59,7 @@ class SettingsPageUI(QtWidgets.QWidget):
             "日本語": "日本語",
             "简体中文": "简体中文",
             "繁體中文": "繁體中文",
-            "русский": "русский",
+            "Русский": "Русский",
             "Deutsch": "Deutsch",
             "Nederlands": "Nederlands",
             "Español": "Español",
