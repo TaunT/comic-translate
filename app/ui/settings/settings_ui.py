@@ -38,7 +38,7 @@ class SettingsPageUI(QtWidgets.QWidget):
         self.credential_services = [self.tr("Open AI GPT"), self.tr("Microsoft Azure"), self.tr("Google Cloud"), 
                                     self.tr("Google Gemini"), self.tr("DeepL"), self.tr("Anthropic Claude"), self.tr("Yandex")]
         
-        self.supported_translators = [self.tr("GPT-4o"), self.tr("GPT-4o mini"), self.tr("DeepL"), 
+        self.supported_translators = [self.tr("GPT-4o"), self.tr("GPT-4o mini"), self.tr("GPT-4.1"), self.tr("GPT-o4-mini"), self.tr("DeepL"),
                                     self.tr("Claude-3-Opus"), self.tr("Claude-3.5-Sonnet"), 
                                     self.tr("Claude-3-Haiku"), self.tr("Gemini-1.5-Flash"), 
                                     self.tr("Gemini-1.5-Pro"), self.tr("Yandex"), self.tr("Google Translate"),
@@ -73,6 +73,8 @@ class SettingsPageUI(QtWidgets.QWidget):
             # Translator mappings
             self.tr("GPT-4o"): "GPT-4o",
             self.tr("GPT-4o mini"): "GPT-4o mini",
+            self.tr("GPT-4.1"): "GPT-4.1",
+            self.tr("GPT-o4-mini"): "GPT-o4-mini",
             self.tr("DeepL"): "DeepL",
             self.tr("Claude-3-Opus"): "Claude-3-Opus",
             self.tr("Claude-3.5-Sonnet"): "Claude-3.5-Sonnet",

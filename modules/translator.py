@@ -30,6 +30,8 @@ class Translator:
         translator_map = {
             self.settings.ui.tr("GPT-4o"): "GPT-4o",
             self.settings.ui.tr("GPT-4o mini"): "GPT-4o mini",
+            self.settings.ui.tr("GPT-4.1"): "GPT-4.1",
+            self.settings.ui.tr("GPT-o4-mini"): "GPT-o4-mini",
             self.settings.ui.tr("Claude-3-Opus"): "Claude-3-Opus",
             self.settings.ui.tr("Claude-3.5-Sonnet"): "Claude-3.5-Sonnet",
             self.settings.ui.tr("Claude-3-Haiku"): "Claude-3-Haiku",
@@ -49,6 +51,8 @@ class Translator:
         model_map = {
             "GPT-4o": "gpt-4o",
             "GPT-4o mini": "gpt-4o-mini",
+            "GPT-4.1": "gpt-4.1-2025-04-14",
+            "GPT-o4-mini": "o4-mini-2025-04-16",
             "Claude-3-Opus": "claude-3-opus-20240229",
             "Claude-3.5-Sonnet": "claude-3-5-sonnet-20241022",
             "Claude-3-Haiku": "claude-3-haiku-20240307",
@@ -80,11 +84,14 @@ class Translator:
                     {"role": "user", "content": [{"type": "text", "text": user_prompt}]}
                 ]
 
+        print(model, sep=' ', end='\n', file=None, flush=False)
+
         response = self.client.chat.completions.create(
             model=model,
             messages=message,
             temperature=1,
-            max_tokens=5000,
+           # max_tokens=5000,
+            max_completion_tokens=5000,
         )
 
         translated = response.choices[0].message.content
