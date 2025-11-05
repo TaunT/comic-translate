@@ -17,7 +17,7 @@ class GPTTranslation(BaseLLMTranslation):
         self.api_base_url = "https://api.openai.com/v1"
         self.supports_images = True
     
-    def initialize(self, settings: Any, source_lang: str, target_lang: str, model_name: str, **kwargs) -> None:
+    def initialize(self, settings: Any, source_lang: str, target_lang: str, model_name: str = 'GPT-4.1-mini', **kwargs) -> None: #заебался искать где у него не проходит модель
         """
         Initialize GPT translation engine.
         

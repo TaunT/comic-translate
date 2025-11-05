@@ -37,6 +37,11 @@ from app.controllers.text import TextController
 from app.controllers.webtoons import WebtoonController
 from collections import deque
 
+# Для сохранения текущего результата распознанного текста, перевода и очищенной картинки
+import cv2, json
+from datetime import datetime
+from PySide6 import QtWidgets
+from app.ui.canvas.save_renderer import ImageSaveRenderer
 
 # Ensure any pre-declared mandatory models
 ensure_mandatory_models()
@@ -52,7 +57,7 @@ class ComicTranslate(ComicTranslateUI):
     def __init__(self, parent=None):
         super(ComicTranslate, self).__init__(parent)
 
-        self.blk_list: list[TextBlock] = []   
+        self.blk_list: list[TextBlock] = []
         self.curr_tblock: TextBlock = None
         self.curr_tblock_item: TextBlockItem = None     
 
@@ -60,6 +65,7 @@ class ComicTranslate(ComicTranslateUI):
         self.selected_batch = []
         self.curr_img_idx = -1
         self.image_states = {}
+        self.cleaned_image = None
         self.image_data = {}  # Store the latest version of each image
         self.image_history = {}  # Store file path history for all images
         self.in_memory_history = {}  # Store image history for recent images
@@ -239,15 +245,122 @@ class ComicTranslate(ComicTranslateUI):
             )
             self.undo_group.activeStack().push(command)
 
+    def get_current_block_index(self):
+        if self.curr_tblock:
+            return self.blk_list.index(self.curr_tblock)
+        return 0
+
+    def select_prev_text(self):
+        if len(self.blk_list) == 0:
+            return
+        current_block_index = self.get_current_block_index()
+        if current_block_index == 0:
+            block_index = -1
+        else:
+            block_index = current_block_index - 1
+        rect = self.rect_item_ctrl.find_corresponding_rect(self.blk_list[block_index], 0.5)
+        if rect == None:
+            return
+        self.image_viewer.select_rectangle(rect)
+
+    def select_next_text(self):
+        if len(self.blk_list) == 0:
+            return
+        current_block_index = self.get_current_block_index()
+        if current_block_index == len(self.blk_list) - 1:
+            block_index = 0
+        else:
+            block_index = current_block_index + 1
+        rect = self.rect_item_ctrl.find_corresponding_rect(self.blk_list[block_index], 0.5)
+        if rect == None:
+            return
+        self.image_viewer.select_rectangle(rect)
+
+    def save_blocks_state(self):
+        if len(self.blk_list) == 0:
+            return
+        date_time = datetime.now().strftime("_%Y-%m-%d_%H-%M-%S")
+        file_name_original = self.image_files[self.curr_img_idx]
+        file_name = file_name_original[0:-4] + date_time + ".txt"
+        a = open(file_name, 'w', encoding="utf-8")
+
+        default_min_font_size = self.settings_page.get_min_font_size()
+        default_init_font_size = self.settings_page.get_max_font_size()
+
+        for blk in self.blk_list:
+            blk_rect = tuple(blk.xyxy)
+            blk_rect_export = str(int(blk_rect[0])) + ',' + str(int(blk_rect[1]))  + ',' +  str(int(blk_rect[2]))  + ',' +  str(int(blk_rect[3]))
+
+            if blk.min_font_size > 0:
+               min_font_size = blk.min_font_size
+            else:
+               min_font_size = default_min_font_size
+            if blk.max_font_size > 0:
+               init_font_size = blk.max_font_size
+            else:
+               init_font_size = default_init_font_size
+
+            blk_to_save = {
+                'translation': blk.translation,
+                'text': blk.text,
+                'rect': blk_rect_export,
+                'min_font_size': min_font_size,
+                'init_font_size': init_font_size,
+            }
+            a.write(json.dumps(blk_to_save, ensure_ascii=False) + "\n")
+
+        a.close()
+        dialog_message = "File " + file_name + " with data saved\n"
+
+        if self.cleaned_image:
+            rgb_img = self.load_image(file_name_original)
+            renderer = ImageSaveRenderer(rgb_img)
+            viewer_state = self.image_states[file_name_original]['viewer_state']
+            renderer.apply_patches(self.image_patches.get(file_name_original, []))
+            renderer.add_state_to_image(viewer_state)
+            sv_pth = file_name_original[0:-4] + date_time + '_cleaned' + file_name_original[-4:]
+            renderer.save_image(sv_pth)
+            dialog_message += "File " + sv_pth + " with cleaned image saved\n"
+
+        dialog = QtWidgets.QDialog(self)
+        dialog.setWindowTitle("Export completed successfully")
+        label = QtWidgets.QLabel(dialog)
+        label.setText(dialog_message)
+        label.setMargin(20)
+        label.adjustSize()
+        dialog.exec_()
+
+    def load_blocks_button(self):
+        self.load_blocks_state_button.click()
+
+    def load_blocks_state(self, file_path: str):
+        updated_blk_list = []
+        with open(file_path, 'r', encoding="utf-8") as f:
+            for line in f.readlines():
+                blk_to_load = json.loads(line)
+                blk_rect_coord = blk_to_load['rect'].split(',')
+                new_blk_coord = [int(blk_rect_coord[0]), int(blk_rect_coord[1]), int(blk_rect_coord[2]), int(blk_rect_coord[3])]
+                new_blk = TextBlock(new_blk_coord)
+                new_blk.translation = blk_to_load['translation']
+                new_blk.text = blk_to_load['text']
+                new_blk.min_font_size = blk_to_load['min_font_size']
+                new_blk.init_font_size = blk_to_load['init_font_size']
+                updated_blk_list.append(new_blk)
+
+        self.blk_list = updated_blk_list
+        self.pipeline.load_box_coords(self.blk_list)
+
     def batch_mode_selected(self):
         self.disable_hbutton_group()
         self.translate_button.setEnabled(True)
         self.cancel_button.setEnabled(True)
+        self.blocks_checker_group.setVisible(False)
 
     def manual_mode_selected(self):
         self.enable_hbutton_group()
         self.translate_button.setEnabled(False)
         self.cancel_button.setEnabled(False)
+        self.blocks_checker_group.setVisible(True)
 
     def on_manual_finished(self):
         self.loading.setVisible(False)
@@ -475,6 +588,7 @@ class ComicTranslate(ComicTranslateUI):
         self.disable_hbutton_group()
         self.run_threaded(self.pipeline.detect_blocks, self.pipeline.on_blk_detect_complete, 
                           self.default_error_handler, self.on_manual_finished, load_rects)
+        self.menu_highlight(0)
 
     def finish_ocr_translate(self, single_block=False):
         if self.blk_list:
@@ -489,9 +603,50 @@ class ComicTranslate(ComicTranslateUI):
                 else:
                     first_block = self.blk_list[0]
                 rect = self.rect_item_ctrl.find_corresponding_rect(first_block, 0.5)
-            self.image_viewer.select_rectangle(rect) 
+            self.image_viewer.select_rectangle(rect)
+            self.make_frequent_substitutions()
         self.set_tool('box')
         self.on_manual_finished()
+
+    def make_frequent_substitutions(self):
+        substitutions = {}
+        substitutions["...?!"] = "?!.."
+        substitutions["...?"] = "?.."
+        substitutions["...!"] = "!.."
+        substitutions[",,,"] = "..."
+        substitutions[", _"] = "..."
+        substitutions[";.,"] = "..."
+        substitutions[";,-"] = "..."
+        substitutions[":."] = "..."
+        substitutions[":_"] = "..."
+        substitutions["._"] = "..."
+        substitutions[",,"] = "..."
+        substitutions["_."] = "..."
+        substitutions[", _"] = "..."
+        substitutions[":~"] = "..."
+        substitutions["::"] = "..."
+        substitutions["_"] = "..."
+        substitutions[";"] = "."
+        substitutions[" ,"] = ","
+        substitutions["--"] = "..."
+        substitutions["70"] = "TO"
+        substitutions["7o"] = "TO"
+        substitutions["10"] = "TO"
+        substitutions["/S "] = "IS "
+        substitutions["1T"] = "IT "
+        substitutions["S0 "] = "SO "
+        substitutions["(t "] = "IT"
+        substitutions["[ "] = "I "
+
+        updated_blk_list = []
+        for blk in self.blk_list:
+            for fr, to in substitutions.items():
+                blk.text = blk.text.replace(fr, to)
+            updated_blk_list.append(blk)
+        self.blk_list = updated_blk_list
+
+    def menu_highlight(self, button_index: int):
+        self.hbutton_group.get_button_group().buttons()[button_index].success()
 
     def ocr(self, single_block=False):
         source_lang = self.s_combo.currentText()
@@ -515,6 +670,7 @@ class ComicTranslate(ComicTranslateUI):
                 self.default_error_handler,
                 lambda: self.finish_ocr_translate(single_block)
             )
+        self.menu_highlight(1)
 
     def translate_image(self, single_block=False):
         source_lang = self.s_combo.currentText()
@@ -539,6 +695,7 @@ class ComicTranslate(ComicTranslateUI):
                 self.default_error_handler,
                 lambda: self.update_translated_text_items(single_block)
             )
+        self.menu_highlight(2)
 
     def _get_visible_text_items(self):
         """Get text items that are currently visible in webtoon mode."""
@@ -631,6 +788,8 @@ class ComicTranslate(ComicTranslateUI):
             self.undo_group.activeStack().beginMacro('inpaint')
             self.run_threaded(self.pipeline.inpaint, self.pipeline.inpaint_complete, 
                               self.default_error_handler, self.on_manual_finished)
+            self.cleaned_image = 1
+            self.menu_highlight(4)
 
     def blk_detect_segment(self, result): 
         # Handle both old (2-tuple) and new (3-tuple) result formats
@@ -683,6 +842,8 @@ class ComicTranslate(ComicTranslateUI):
                         self.default_error_handler,
                         self.on_manual_finished
                     )
+                self.cleaned_image = None
+                self.menu_highlight(3)
 
             else:
                 self.run_threaded(
