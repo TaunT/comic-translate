@@ -224,6 +224,9 @@ class ComicTranslate(ComicTranslateUI):
             self.webtoon_toggle.setChecked(False)
         self.webtoon_mode = False
 
+        for button in self.hbutton_group.get_button_group().buttons():
+            button.default()
+
     def connect_rect_item_signals(self, rect_item): return self.rect_item_ctrl.connect_rect_item_signals(rect_item)
     def apply_inpaint_patches(self, patches): return self.image_ctrl.apply_inpaint_patches(patches)
     def render_settings(self): return self.text_ctrl.render_settings()
